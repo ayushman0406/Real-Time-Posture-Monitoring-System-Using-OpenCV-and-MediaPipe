@@ -142,6 +142,11 @@ def get_status():
         'reference_coords': detector.reference_coords if detector.reference_coords else None
     })
 
+@app.route('/health', methods=['GET'])
+def health():
+    """Lightweight health check endpoint."""
+    return jsonify({'ok': True}), 200
+
 @app.route('/debug', methods=['GET'])
 def debug():
     """Debug endpoint to check application state"""
