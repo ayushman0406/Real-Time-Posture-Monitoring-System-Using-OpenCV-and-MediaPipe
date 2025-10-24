@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["glib", "gtk3", "libGL", "mesa", "xorg.libX11", "xorg.libXext", "xorg.libXrender", "libSM", "libICE", "ffmpeg", "libjpeg", "libpng", "libtiff", "atlas"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[start]
-cmd = "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 app:app"

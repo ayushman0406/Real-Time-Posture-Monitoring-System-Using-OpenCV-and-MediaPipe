@@ -23,15 +23,6 @@ reference_saved = False
 def index():
     return render_template('index.html')
 
-@app.route('/health')
-def health():
-    """Simple health check endpoint for deployment platforms"""
-    return jsonify({
-        'status': 'healthy',
-        'message': 'Slouching Detector is running',
-        'timestamp': time.time()
-    })
-
 @app.route('/capture_reference', methods=['POST'])
 def capture_reference():
     """Capture reference posture from uploaded image"""
@@ -246,7 +237,4 @@ if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
     os.makedirs('templates', exist_ok=True)
     
-    # Get port from environment variable (for cloud deployment)
-    port = int(os.environ.get('PORT', 5000))
-    
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=5000)
