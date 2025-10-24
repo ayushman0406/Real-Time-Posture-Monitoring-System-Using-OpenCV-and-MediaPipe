@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slouching Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .step {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+
+        .step h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .camera-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .status.good {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.bad {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.neutral {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .file-input {
+            margin: 20px 0;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input label {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Prominent Posture Status Styles */
+        .posture-status-container {
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .posture-status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-width: 400px;
+            max-width: 600px;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .posture-status.good {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+            animation: none;
+        }
+
+        .posture-status.bad {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 15px 35px rgba(231, 76, 60, 0.3);
+            animation: shake 0.5s infinite;
+        }
+
+        .posture-status.monitoring {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        .status-icon {
+            font-size: 3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .status-message {
+            font-size: 1.4em;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 768px) {
+            .posture-status {
+                min-width: 300px;
+                padding: 20px 30px;
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .status-icon {
+                font-size: 2.5em;
+                min-width: 60px;
+            }
+            
+            .status-message {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🫁 Slouching Detector</h1>
+            <p>Monitor your posture in real-time to maintain good health</p>
+        </div>
+
+        <!-- Prominent Posture Status Display -->
+        <div class="posture-status-container">
+            <div class="posture-status" id="mainPostureStatus">
+                <div class="status-icon" id="statusIcon">📊</div>
+                <div class="status-content">
+                    <div class="status-title">Posture Status</div>
+                    <div class="status-message" id="statusMessage">Ready to start monitoring</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert" id="alert"></div>
+
+        <!-- Step 1: Capture Reference Posture -->
+        <div class="step">
+            <h2>Step 1: Capture Reference Posture</h2>
+            <p>Take a photo of yourself in good posture. This will be used as a reference for monitoring.</p>
+            
+            <div class="file-input">
+                <label for="imageInput">📷 Choose Photo</label>
+                <input type="file" id="imageInput" accept="image/*" capture="camera">
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="captureBtn" onclick="capturePhoto()">📸 Capture Photo</button>
+                <button class="btn" id="uploadBtn" onclick="uploadReference()" disabled>💾 Save Reference</button>
+            </div>
+            
+            <img id="previewImage" class="preview-image" alt="Preview">
+            <div class="loading" id="loading1">
+                <div class="spinner"></div>
+                <p>Processing image...</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Start Monitoring -->
+        <div class="step">
+            <h2>Step 2: Start Posture Monitoring</h2>
+            <p>Once you've captured your reference posture, start monitoring to detect slouching.</p>
+            
+            <div class="controls">
+                <button class="btn success" id="startBtn" onclick="startMonitoring()" disabled>▶️ Start Monitoring</button>
+                <button class="btn danger" id="stopBtn" onclick="stopMonitoring()" disabled>⏹️ Stop Monitoring</button>
+            </div>
+            
+            <div class="loading" id="loading2">
+                <div class="spinner"></div>
+                <p>Starting monitoring...</p>
+            </div>
+        </div>
+
+        <!-- Status Display -->
+        <div class="step">
+            <h2>Posture Status</h2>
+            <div class="status neutral" id="status">
+                Ready to start monitoring
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let referenceImage = null;
+        let monitoringInterval = null;
+        let audioContext = null;
+        let lastPostureStatus = null;
+
+        // File input handling
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    referenceImage = e.target.result;
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('previewImage').style.display = 'block';
+                    document.getElementById('uploadBtn').disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function capturePhoto() {
+            // Use getUserMedia to access camera directly
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        // Create video element
+                        const video = document.createElement('video');
+                        video.srcObject = stream;
+                        video.play();
+                        
+                        // Create canvas to capture photo
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Show video in a modal-like overlay
+                        const overlay = document.createElement('div');
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.8);
+                            z-index: 1000;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                        `;
+                        
+                        video.style.cssText = `
+                            max-width: 80%;
+                            max-height: 80%;
+                            border-radius: 10px;
+                        `;
+                        
+                        const captureBtn = document.createElement('button');
+                        captureBtn.textContent = '📸 Capture Photo';
+                        captureBtn.style.cssText = `
+                            margin-top: 20px;
+                            padding: 15px 30px;
+                            background: linear-gradient(45deg, #667eea, #764ba2);
+                            color: white;
+                            border: none;
+                            border-radius: 25px;
+                            font-size: 1.1em;
+                            cursor: pointer;
+                        `;
+                        
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.textContent = '❌ Cancel';
+                        cancelBtn.style.cssText = `
+                            margin-top: 10px;
+                            padding: 10px 20px;
+                            background: #ff6b6b;
+                            color: white;
+                            border: none;
+                            border-radius: 20px;
+                            cursor: pointer;
+                        `;
+                        
+                        captureBtn.onclick = function() {
+                            // Set canvas dimensions to match video
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            
+                            // Draw video frame to canvas
+                            ctx.drawImage(video, 0, 0);
+                            
+                            // Convert canvas to blob
+                            canvas.toBlob(function(blob) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    referenceImage = e.target.result;
+                                    document.getElementById('previewImage').src = e.target.result;
+                                    document.getElementById('previewImage').style.display = 'block';
+                                    document.getElementById('uploadBtn').disabled = false;
+                                };
+                                reader.readAsDataURL(blob);
+                            }, 'image/jpeg', 0.8);
+                            
+                            // Stop camera stream
+                            stream.getTracks().forEach(track => track.stop());
+                            
+                            // Remove overlay
+                            document.body.removeChild(overlay);
+                        };
+                        
+                        cancelBtn.onclick = function() {
+                            // Stop camera stream
+                            stream.getTracks().forEach(track => track.stop());
+                            
+                            // Remove overlay
+                            document.body.removeChild(overlay);
+                        };
+                        
+                        overlay.appendChild(video);
+                        overlay.appendChild(captureBtn);
+                        overlay.appendChild(cancelBtn);
+                        document.body.appendChild(overlay);
+                    })
+                    .catch(function(error) {
+                        console.error('Error accessing camera:', error);
+                        showAlert('Camera access denied. Please allow camera access and try again.', 'error');
+                    });
+            } else {
+                showAlert('Camera not supported. Please use the file upload option instead.', 'error');
+            }
+        }
+
+        function uploadReference() {
+            if (!referenceImage) {
+                showAlert('Please select an image first', 'error');
+                return;
+            }
+
+            const loading = document.getElementById('loading1');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            loading.style.display = 'block';
+            uploadBtn.disabled = true;
+
+            // Convert base64 to blob
+            fetch(referenceImage)
+                .then(res => res.blob())
+                .then(blob => {
+                    const formData = new FormData();
+                    formData.append('image', blob, 'reference.jpg');
+
+                    return fetch('/capture_reference', {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.success) {
+                        showAlert('Reference posture captured successfully!', 'success');
+                        document.getElementById('startBtn').disabled = false;
+                        
+                        // Show the processed image with landmarks
+                        if (data.image) {
+                            document.getElementById('previewImage').src = 'data:image/jpeg;base64,' + data.image;
+                        }
+                    } else {
+                        showAlert(data.error || 'Failed to capture reference posture', 'error');
+                        uploadBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    uploadBtn.disabled = false;
+                    showAlert('Error: ' + error.message, 'error');
+                });
+        }
+
+        function startMonitoring() {
+            const loading = document.getElementById('loading2');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            loading.style.display = 'block';
+            startBtn.disabled = true;
+
+            fetch('/start_monitoring', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    showAlert('Posture monitoring started!', 'success');
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    // Update prominent status to show monitoring started
+                    updateProminentStatus('Monitoring started...', true);
+                    
+                    // Start polling for status updates
+                    monitoringInterval = setInterval(updateStatus, 1000);
+                } else {
+                    showAlert(data.error || 'Failed to start monitoring', 'error');
+                    startBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                startBtn.disabled = false;
+                showAlert('Error: ' + error.message, 'error');
+            });
+        }
+
+        function stopMonitoring() {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            fetch('/stop_monitoring', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Posture monitoring stopped', 'success');
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    
+                    // Stop polling
+                    if (monitoringInterval) {
+                        clearInterval(monitoringInterval);
+                        monitoringInterval = null;
+                    }
+                    
+                    // Reset status
+                    document.getElementById('status').textContent = 'Monitoring stopped';
+                    document.getElementById('status').className = 'status neutral';
+                    
+                    // Update prominent status
+                    updateProminentStatus('Monitoring stopped', false);
+                } else {
+                    showAlert(data.error || 'Failed to stop monitoring', 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error: ' + error.message, 'error');
+            });
+        }
+
+        function playAudioAlert() {
+            try {
+                // Create audio context if it doesn't exist
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Create a beep sound
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Configure the beep
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz frequency
+                oscillator.type = 'sine';
+                
+                // Set volume envelope
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                // Play the beep
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+            } catch (error) {
+                console.log('Audio alert failed:', error);
+                // Fallback: use browser's built-in beep (if available)
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBS13yO/eizEIHWq+8+OWT');
+                    audio.play().catch(() => {});
+                } catch (e) {
+                    console.log('Fallback audio also failed');
+                }
+            }
+        }
+
+        function updateProminentStatus(status, isMonitoring = false) {
+            const statusElement = document.getElementById('mainPostureStatus');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Update the message
+            statusMessage.textContent = status;
+            
+            // Remove all status classes
+            statusElement.className = 'posture-status';
+            
+            // Add appropriate class and icon
+            if (status.includes('Slouching')) {
+                statusElement.classList.add('bad');
+                statusIcon.textContent = '⚠️';
+                
+                // Play audio alert for slouching
+                if (lastPostureStatus !== 'Slouching detected!') {
+                    playAudioAlert();
+                }
+            } else if (status.includes('Good')) {
+                statusElement.classList.add('good');
+                statusIcon.textContent = '✅';
+            } else if (isMonitoring) {
+                statusElement.classList.add('monitoring');
+                statusIcon.textContent = '👁️';
+            } else {
+                statusIcon.textContent = '📊';
+            }
+            
+            lastPostureStatus = status;
+        }
+
+        function updateStatus() {
+            fetch('/get_status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update the old status element (for backward compatibility)
+                    const statusElement = document.getElementById('status');
+                    if (statusElement) {
+                        statusElement.textContent = data.status;
+                        
+                        if (data.status.includes('Slouching')) {
+                            statusElement.className = 'status bad';
+                        } else if (data.status.includes('Good')) {
+                            statusElement.className = 'status good';
+                        } else {
+                            statusElement.className = 'status neutral';
+                        }
+                    }
+                    
+                    // Update the prominent status display
+                    updateProminentStatus(data.status, data.monitoring_active);
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                });
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize status check and prominent status
+        updateStatus();
+        
+        // Initialize prominent status display
+        updateProminentStatus('Ready to start monitoring', false);
+    </script>
+</body>
+</html>
