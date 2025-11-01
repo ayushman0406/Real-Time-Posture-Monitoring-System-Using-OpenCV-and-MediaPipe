@@ -1,104 +1,128 @@
-🫁 Slouching Detector - Full Stack Application
+# 🫁 Slouching Detector - Full Stack Application
 
 A real-time posture monitoring application that detects slouching using computer vision and MediaPipe. This full-stack application includes a Flask backend API and a modern web frontend.
 
-✨ Features
+## Features
 
-📸 Reference Posture Capture – Take a photo of yourself in good posture
+- 📸 **Reference Posture Capture**: Take a photo of yourself in good posture as a reference
+- 🔍 **Real-time Monitoring**: Continuously monitor your posture using your webcam
+- ⚡ **Instant Alerts**: Get immediate feedback when slouching is detected
+- 🎯 **Accurate Detection**: Uses advanced pose estimation with z-axis adjustments for better accuracy
+- 🌐 **Web Interface**: Modern, responsive web interface that works on any device
 
-🔍 Real-time Monitoring – Detect posture via webcam instantly
+## How It Works
 
-⚡ Instant Alerts when slouching is detected
+1. **Capture Reference**: Take a photo of yourself in good posture
+2. **Start Monitoring**: Begin real-time posture monitoring using your webcam
+3. **Get Alerts**: Receive instant notifications when slouching is detected
 
-🎯 Accurate Pose Estimation with z-axis consideration
+The application uses MediaPipe's pose estimation to track shoulder positions and compares them against your reference posture to detect slouching.
 
-🌐 Responsive Web Interface
+## Local Development
 
-🛠 How It Works
+### Prerequisites
 
-Capture a good posture reference image
+- Python 3.8 or higher
+- Webcam access
+- Modern web browser
 
-Start live monitoring through your webcam
+### Installation
 
-Receive instant notifications if slouching
-
-Powered by MediaPipe Pose tracking to monitor shoulder alignment over time.
-
-🧩 Local Development
-✅ Prerequisites
-
-Python 3.8+
-
-Webcam
-
-Modern web browser
-
-🚀 Setup Instructions
-# 1️⃣ Clone the repository
+1. Clone the repository:
+```bash
 git clone <your-repo-url>
 cd Slouching-Detector
+```
 
-# 2️⃣ Create virtual environment
+2. Create a virtual environment:
+```bash
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# 3️⃣ Install dependencies
+3. Install dependencies:
+```bash
 pip install -r requirements.txt
+```
 
-# 4️⃣ Start Application
+4. Run the application:
+```bash
 python app.py
+```
 
+5. Open your browser and go to `http://localhost:5000`
 
-➡️ Open your browser at: http://localhost:5000
+## File Structure
 
-📁 File Structure
+```
 Slouching-Detector/
-├── app.py                 # Flask backend server
-├── slouching_detector.py  # Posture detection logic
+├── app.py                 # Flask backend application
+├── slouching_detector.py  # Core posture detection logic
 ├── templates/
-│   └── index.html         # Web UI
-├── requirements.txt       # Dependencies
-└── README.md              # Project documentation
+│   └── index.html        # Web frontend
+├── requirements.txt      # Python dependencies
+├── Procfile             # Heroku deployment config
+├── railway.json         # Railway deployment config
+├── runtime.txt          # Python version specification
+└── README.md           # This file
+```
 
-🔌 API Endpoints
-Endpoint	Method	Description
-/	GET	Main UI
-/capture_reference	POST	Save reference posture
-/start_monitoring	POST	Begin posture detection
-/stop_monitoring	POST	Stop detection
-/get_status	GET	Check slouching status
-🔍 Technical Overview
+## API Endpoints
 
-Backend: Flask
+- `GET /` - Main web interface
+- `POST /capture_reference` - Capture reference posture from image
+- `POST /start_monitoring` - Start real-time posture monitoring
+- `POST /stop_monitoring` - Stop posture monitoring
+- `GET /get_status` - Get current posture status
 
-Computer Vision: OpenCV + MediaPipe
+## Technical Details
 
-Frontend: HTML5, CSS3, JavaScript
+- **Backend**: Flask with MediaPipe for pose estimation
+- **Frontend**: HTML5, CSS3, JavaScript with modern responsive design
+- **Computer Vision**: OpenCV and MediaPipe for pose detection
+- **Real-time Processing**: WebSocket-like polling for status updates
+- **Deployment**: Ready for Heroku, Railway, Render, and other platforms
 
-Real-time polling for status updates
+## Browser Compatibility
 
-🌐 Browser Compatibility
+- Chrome/Chromium (recommended)
+- Firefox
+- Safari
+- Edge
 
-✅ Chrome/Chromium (Best)
-✅ Firefox
-✅ Safari
-✅ Edge
+## Troubleshooting
 
-🛟 Troubleshooting
-Issue	Fix
-Camera not working	Allow browser camera permission
-Detection inaccurate	Ensure bright lighting & full upper body visible
-Reference posture incorrect	Retake reference in good posture
-🤝 Contributing
+### Common Issues
 
-Fork the repo
+1. **Camera Access**: Ensure your browser has permission to access the camera
+2. **Pose Detection**: Make sure you're visible in the frame and well-lit
+3. **Reference Capture**: Ensure you're in good posture when capturing the reference image
 
-Create a branch
+### Performance Tips
 
-Make improvements
+- Use good lighting for better pose detection
+- Ensure stable internet connection for real-time monitoring
+- Close other applications that might use the camera
 
-Submit PR
+## Contributing
 
-📄 License
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-MIT License
+## License
+
+This project is open source and available under the MIT License.
+
+## Support
+
+If you encounter any issues:
+1. Check the troubleshooting section above
+2. Create an issue on GitHub
+3. Ensure all dependencies are properly installed
+
+---
+
+**Note**: This application requires camera access and works best in well-lit environments. The accuracy of posture detection depends on the quality of the reference image and current lighting conditions.
