@@ -1,128 +1,62 @@
-# 🫁 Slouching Detector - Full Stack Application
+# PostureBar — Native macOS Menu Bar Posture Coach (`SwiftUI` + Apple `Vision`)
 
-A real-time posture monitoring application that detects slouching using computer vision and MediaPipe. This full-stack application includes a Flask backend API and a modern web frontend.
+A native macOS menu bar application (`NSStatusBar` / `MenuBarExtra`) that lives next to your Wi-Fi and Battery icons, using Apple's on-device **Vision** framework (`VNDetectHumanBodyPoseRequest` + `VNDetectFaceLandmarksRequest`) and a scale-invariant biomechanical formula to detect slouching, forward head posture ("Tech Neck"), uneven shoulders, and screen crowding.
 
-## Features
+## Quick Start (Build & Launch the macOS App)
 
-- 📸 **Reference Posture Capture**: Take a photo of yourself in good posture as a reference
-- 🔍 **Real-time Monitoring**: Continuously monitor your posture using your webcam
-- ⚡ **Instant Alerts**: Get immediate feedback when slouching is detected
-- 🎯 **Accurate Detection**: Uses advanced pose estimation with z-axis adjustments for better accuracy
-- 🌐 **Web Interface**: Modern, responsive web interface that works on any device
-
-## How It Works
-
-1. **Capture Reference**: Take a photo of yourself in good posture
-2. **Start Monitoring**: Begin real-time posture monitoring using your webcam
-3. **Get Alerts**: Receive instant notifications when slouching is detected
-
-The application uses MediaPipe's pose estimation to track shoulder positions and compares them against your reference posture to detect slouching.
-
-## Local Development
-
-### Prerequisites
-
-- Python 3.8 or higher
-- Webcam access
-- Modern web browser
-
-### Installation
-
-1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd Slouching-Detector
+./build_app.sh
+open PostureBar.app
 ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+Because `Info.plist` sets `LSUIElement = true`, **PostureBar** runs exclusively in your top menu bar without cluttering your Dock.
+
+## First-Launch Setup & Onboarding Wizard
+
+When you launch `PostureBar.app` for the first time (or click **Setup & Preferences…** in the menu bar popover), a 3-step setup wizard walks you through:
+
+1. **Step 1 — Camera Tracking Mode Preference**
+   - **Continuous Low-FPS (1–2 FPS)**: Instant real-time posture score updates in the menu bar; keeps the green camera indicator on continuously while active.
+   - **Periodic Burst Check (1s every 30–60s)**: Opens the camera for ~1 second to sample a 5-frame burst, evaluates your posture, and powers the camera hardware completely off so the green indicator light stays off ~97% of the time.
+2. **Step 2 — Slouching Feedback Style (Multi-Select + Live Preview)**
+   - **macOS Notification Banner**: Native `UNUserNotificationCenter` alert naming the specific biomechanical issue and an ergonomic coaching tip.
+   - **Subtle Audio Chime**: Soft macOS system chime (`NSSound`) with configurable cooldown.
+   - **Gentle Screen Dim / Frosted Blur Overlay**: Click-through, non-activating `NSPanel` across all displays (`ignoresMouseEvents = true`) that gently dims or blurs the screen proportionally to your slouch severity and clears the instant you sit up.
+3. **Step 3 — 3-Second Guided Upright Baseline Calibration**
+   - Captures multi-frame biomechanical ratios over a 3-second countdown and saves your personal baseline to `~/Library/Application Support/PostureBar/posture_baseline.json`.
+
+## Reworked Scale-Invariant Biomechanical Formula
+
+All measurements in `Sources/PostureBar/Vision/PostureMathEngine.swift` are normalized by apparent **Inter-Shoulder Width ($W$)** so moving your chair slightly back or adjusting screen tilt does not trigger false positives:
+
+1. **Cervical Extension Ratio ($R_{\text{neck}}$)**: $\frac{y_{\text{earMid}} - y_{\text{torsoTop}}}{W}$ — detects thoracic hunching and vertical neck compression.
+2. **Differential Head-to-Shoulder Scale ($R_{\text{jut}}$)**: $\frac{D_{\text{eyes}}}{W}$ — compares inter-pupillary distance to shoulder width to separate **Forward Head Jut ("Tech Neck")** from whole-body chair movement.
+3. **Craniovertebral Pitch ($R_{\text{pitch}}$)**: $\frac{y_{\text{nose}} - y_{\text{earMid}}}{W} + 0.35 \cdot \theta_{\text{facePitch}}$ — detects downward chin drop.
+4. **Coronal Shoulder Roll ($\theta_{\text{roll}}$)**: $\left|\arctan2(\Delta y_{\text{shoulders}}, \Delta x_{\text{shoulders}})\right|$ — detects asymmetric leaning on one elbow.
+5. **Lateral Head Offset ($R_{\text{lat}}$)**: $\frac{|x_{\text{head}} - x_{\text{shoulderMid}}|}{W}$ — detects off-center leaning.
+
+## Project Structure
+
+```text
+├── Package.swift
+├── Info.plist
+├── build_app.sh
+├── PostureBar.app/
+├── Sources/PostureBar/
+│   ├── App/
+│   │   ├── PostureBarApp.swift          # @main MenuBarExtra + AppDelegate
+│   │   └── AppSettings.swift            # @AppStorage preferences for sampling & alerts
+│   ├── Vision/
+│   │   ├── PostureMathEngine.swift      # Scale-invariant biomechanical formula & EMA hysteresis
+│   │   ├── PoseVisionProcessor.swift    # Apple Vision body pose + face landmark extraction
+│   │   └── CameraScheduler.swift        # Continuous (1–2 FPS) & Periodic Burst (1s/30–60s) manager
+│   ├── Feedback/
+│   │   ├── FeedbackCoordinator.swift    # Orchestrates Banner, Sound, and Screen Dim/Blur
+│   │   └── ScreenOverlayWindow.swift    # Multi-monitor click-through dim/blur overlay
+│   └── Views/
+│       ├── OnboardingView.swift         # 3-step setup wizard with live previews
+│       ├── MenuBarPopoverView.swift     # Top menu bar popover UI
+│       └── CameraPreviewView.swift      # Mirrored camera preview + skeleton overlay
+└── Tests/PostureBarTests/
+    └── PostureMathEngineTests.swift     # Unit tests for scale invariance & slouch detection
 ```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Run the application:
-```bash
-python app.py
-```
-
-5. Open your browser and go to `http://localhost:5000`
-
-## File Structure
-
-```
-Slouching-Detector/
-├── app.py                 # Flask backend application
-├── slouching_detector.py  # Core posture detection logic
-├── templates/
-│   └── index.html        # Web frontend
-├── requirements.txt      # Python dependencies
-├── Procfile             # Heroku deployment config
-├── railway.json         # Railway deployment config
-├── runtime.txt          # Python version specification
-└── README.md           # This file
-```
-
-## API Endpoints
-
-- `GET /` - Main web interface
-- `POST /capture_reference` - Capture reference posture from image
-- `POST /start_monitoring` - Start real-time posture monitoring
-- `POST /stop_monitoring` - Stop posture monitoring
-- `GET /get_status` - Get current posture status
-
-## Technical Details
-
-- **Backend**: Flask with MediaPipe for pose estimation
-- **Frontend**: HTML5, CSS3, JavaScript with modern responsive design
-- **Computer Vision**: OpenCV and MediaPipe for pose detection
-- **Real-time Processing**: WebSocket-like polling for status updates
-- **Deployment**: Ready for Heroku, Railway, Render, and other platforms
-
-## Browser Compatibility
-
-- Chrome/Chromium (recommended)
-- Firefox
-- Safari
-- Edge
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Camera Access**: Ensure your browser has permission to access the camera
-2. **Pose Detection**: Make sure you're visible in the frame and well-lit
-3. **Reference Capture**: Ensure you're in good posture when capturing the reference image
-
-### Performance Tips
-
-- Use good lighting for better pose detection
-- Ensure stable internet connection for real-time monitoring
-- Close other applications that might use the camera
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Support
-
-If you encounter any issues:
-1. Check the troubleshooting section above
-2. Create an issue on GitHub
-3. Ensure all dependencies are properly installed
-
----
-
-**Note**: This application requires camera access and works best in well-lit environments. The accuracy of posture detection depends on the quality of the reference image and current lighting conditions.
